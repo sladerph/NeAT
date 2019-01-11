@@ -7,11 +7,7 @@ var config = {
   width: screen_w,
   height: screen_h + brain_h,
   physics: {
-    default: 'arcade',
-    arcade: {
-      gravity: {y: 10},
-      debug: false
-    }
+    default: 'matter',
   },
   scene: {
     preload: preload,
@@ -29,30 +25,36 @@ function preload() {
   this.load.image('jump_up', 'Sprites/jumping.png');
   this.load.image('jump_down', 'Sprites/falling.png');
   this.load.image('kick', 'Sprites/shooting.png');
-  // this.load.image('dude', 'Sprites/sprite_sheet.png');
   this.load.image('hills', 'Sprites/hills.jpg');
+  this.load.image('ball', 'Sprites/ball.png');
 }
 
 function create() {
   this.add.image(0, 0, 'hills').setOrigin(0, 0);
+
+  ball = this.physics.add.sprite(screen_w / 2, 100, 'ball').setScale(0.2);
 
   player = this.physics.add.sprite(screen_w / 2, 200, 'idle');
   player.setBounce(0.2);
   player.setCollideWorldBounds(true);
   player.setGravityY(300);
 
+  ball.setBounce(0.4);
+  ball.setCollideWorldBounds(true);
+  ball.setGravityY(500);
+
   this.anims.create({
     key: 'Right',
-    frames: [{ key: 'idle'}, {key: 'move_right'}, {key: 'idle'}],
+    frames: [{key: 'move_right'}, {key: 'idle'}],
     frameRate: 5,
-    repeat: 0
+    repeat: -1
   });
 
   this.anims.create({
     key: 'Left',
-    frames: [{key: 'idle'}, {key: 'move_left'}, {key: 'idle'}],
+    frames: [{key: 'move_left'}, {key: 'idle'}],
     frameRate: 5,
-    repeat: 0
+    repeat: -1
   });
 
   this.anims.create({
@@ -67,7 +69,15 @@ function create() {
     frameRate: 20
   });
 
+  this.anims.create({
+    key: 'Idle',
+    frames: [{key: 'idle'}],
+    frameRate: 20
+  });
+
   player.anims.play('Down', true);
+
+  this.physics.add.collider(ball, player);
 
   cursors = this.input.keyboard.createCursorKeys();
 
@@ -76,14 +86,21 @@ function create() {
 function update() {
   if (cursors.left.isDown) {
     player.setVelocityX(-160);
-    player.anims.play('Left', true);
   } else if (cursors.right.isDown) {
     player.setVelocityX(160);
-    player.anims.play('Right', true);
   }
 
   if (cursors.up.isDown && player.body.position.y >= 602) {
     player.setVelocityY(-330);
+    player.anims.play('Up', true);
+  } else if (player.body.velocity.y > 0 && player.body.position.y < 602) {
+    player.anims.play('Down', true);
+  } else if (player.body.position.y >= 602 && Math.abs(player.body.velocity.x) <= 2) {
+    player.anims.play('Idle', true);
+  } else if (player.body.velocity.x < -2 && player.body.position.y >= 602) { // Going left.
+    player.anims.play('Left', true);
+  } else if (player.body.position.y >= 602 && player.body.velocity.x > 2) {
+    player.anims.play('Right', true);
   }
 }
 
