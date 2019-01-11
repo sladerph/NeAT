@@ -2,8 +2,7 @@ const screen_w = 1700;
 const screen_h = 800;
 const brain_h  = 0;
 
-var shooting = false;
-var shooting_t = 0;
+var glob;
 
 var config = {
   type: Phaser.AUTO,
@@ -37,23 +36,29 @@ function preload() {
   this.load.image('kick', 'Sprites/shooting.png');
   this.load.image('hills', 'Sprites/hills.jpg');
   this.load.image('ball', 'Sprites/ball.png');
+  this.load.json('shapes', 'Sprites/shapes.json');
 }
 
 function create() {
+  shapes = this.cache.json.get('shapes');
+glob = this;
   this.add.image(0, 0, 'hills').setOrigin(0, 0);
 
   ball = this.matter.add.sprite(screen_w / 2, 100, 'ball');
 
-  player = this.matter.add.sprite(screen_w / 2 - 500, 400, 'idle');
-  player.setCircle();
-  player.setBounce(0);
-  player.setFriction(1);
+  // player = this.matter.add.sprite(screen_w / 2 - 500, 400, 'idle');
+  // player.setCircle();
+  // player.setBounce(0);
+  // player.setFriction(1);
   // player.setGravityY(300);
+  player = new Player(screen_w / 2 - 500, 400, 1, this);
+  // p = new Player(screen_w / 2 + 500, 400, 2, this);
 
   ball.setCircle();
   ball.setFriction(0.05);
   ball.setFrictionAir(0.001);
   ball.setBounce(0.7);
+  ball.body.label = "Ball";
   // ball.setGravityY(500);
 
   this.anims.create({
@@ -94,17 +99,19 @@ function create() {
     frameRate: 20
   });
 
-  player.anims.play('Down', true);
+  player.body.anims.play('Down', true);
 
   cursors = this.input.keyboard.createCursorKeys();
 
   this.matter.world.setBounds(0, 0, screen_w, screen_h);
 
-  this.matter.world.on('collisionstart', function (event, a, b) {
-    if ((a == player || b == player) && (a == ball || b == ball)) {
-      if (shooting) {
-        if (ball.body.position.x > player.body.position.x) {
-          ball.body.velocity.multiply(2);
+  this.matter.world.on('collisionstart', function (event) {
+    console.log(event.pairs[0]);
+    if (event.pairs[0].bodyA.label == "Player1") {
+      if (event.pairs[0].bodyB.label == "Ball") {
+        // Collision between player 1 and the ball.
+        if (player.shooting) {
+          console.log(event.pairs[0]);
         }
       }
     }
@@ -112,41 +119,43 @@ function create() {
 }
 
 function update() {
+  player.body.setVelocityX(0);
+
   if (cursors.left.isDown) {
-    player.setVelocityX(-5);
+    player.body.setVelocityX(-5);
   } else if (cursors.right.isDown) {
-    player.setVelocityX(5);
+    player.body.setVelocityX(5);
   }
 
-  if (cursors.up.isDown && player.body.position.y >= 701) {
-    player.setVelocityY(-10);
-    player.anims.play('Up', true);
-  } else if (player.body.velocity.y > 0 && player.body.position.y < 701) {
-    player.anims.play('Down', true);
-  } else if (player.body.position.y >= 701 && Math.abs(player.body.velocity.x) <= 2) {
-    player.anims.play('Idle', true);
-  } else if (player.body.velocity.x < -2 && player.body.position.y >= 701) { // Going left.
-    player.anims.play('Left', true);
-  } else if (player.body.position.y >= 602 && player.body.velocity.x > 2) {
-    player.anims.play('Right', true);
+  if (cursors.up.isDown && player.body.body.position.y >= 701) {
+    player.body.setVelocityY(-10);
+    player.body.anims.play('Up', true);
+  } else if (player.body.body.velocity.y > 0 && player.body.body.position.y < 701) {
+    player.body.anims.play('Down', true);
+  } else if (player.body.body.position.y >= 701 && Math.abs(player.body.body.velocity.x) <= 2) {
+    player.body.anims.play('Idle', true);
+  } else if (player.body.body.velocity.x < -2 && player.body.body.position.y >= 701) { // Going left.
+    player.body.anims.play('Left', true);
+  } else if (player.body.body.position.y >= 602 && player.body.body.velocity.x > 2) {
+    player.body.anims.play('Right', true);
   }
-  if (cursors.space.isDown && !shooting) {
-    player.anims.play('Shoot', true);
-    shooting = true;
-    shooting_t = 0;
+  if (cursors.space.isDown && !player.shooting) {
+    player.body.anims.play('Shoot', true);
+    player.shooting = true;
+    player.shooting_t = 0;
   }
 
-  if (shooting) {
-    shooting_t++;
-    if (shooting_t > 25) {
-      shooting = false;
+  if (player.shooting) {
+    player.shooting_t++;
+    if (player.shooting_t > 25) {
+      player.shooting = false;
     }
-    player.anims.play('Shoot', true);
+    player.body.anims.play('Shoot', true);
   }
 
-  player.setAngle(0);
-  player.body.angularVelocity = 0;
-  player.body.angularSpeed    = 0;
+  player.body.setAngle(0);
+  player.body.body.angularVelocity = 0;
+  player.body.body.angularSpeed    = 0;
 }
 
 
