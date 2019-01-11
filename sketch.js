@@ -2,6 +2,9 @@ const screen_w = 1700;
 const screen_h = 800;
 const brain_h  = 0;
 
+var shooting = false;
+var shooting_t = 0;
+
 var config = {
   type: Phaser.AUTO,
   width: screen_w,
@@ -13,7 +16,14 @@ var config = {
     preload: preload,
     create: create,
     update: update,
-  }
+  },
+  // plugins: {
+  //   scene: [{
+  //     plugin: PhaserMatterCollisionPlugin,
+  //     key: 'matterCollision',
+  //     mapping: 'matterCollision'
+  //   }]
+  // }
 };
 
 var game = new Phaser.Game(config);
@@ -32,16 +42,19 @@ function preload() {
 function create() {
   this.add.image(0, 0, 'hills').setOrigin(0, 0);
 
-  ball = this.physics.add.sprite(screen_w / 2, 100, 'ball').setScale(0.2);
+  ball = this.matter.add.sprite(screen_w / 2, 100, 'ball');
 
-  player = this.physics.add.sprite(screen_w / 2, 200, 'idle');
-  player.setBounce(0.2);
-  player.setCollideWorldBounds(true);
-  player.setGravityY(300);
+  player = this.matter.add.sprite(screen_w / 2 - 500, 400, 'idle');
+  player.setCircle();
+  player.setBounce(0);
+  player.setFriction(1);
+  // player.setGravityY(300);
 
-  ball.setBounce(0.4);
-  ball.setCollideWorldBounds(true);
-  ball.setGravityY(500);
+  ball.setCircle();
+  ball.setFriction(0.05);
+  ball.setFrictionAir(0.001);
+  ball.setBounce(0.7);
+  // ball.setGravityY(500);
 
   this.anims.create({
     key: 'Right',
@@ -75,33 +88,65 @@ function create() {
     frameRate: 20
   });
 
-  player.anims.play('Down', true);
+  this.anims.create({
+    key: 'Shoot',
+    frames: [{key: 'kick'}],
+    frameRate: 20
+  });
 
-  this.physics.add.collider(ball, player);
+  player.anims.play('Down', true);
 
   cursors = this.input.keyboard.createCursorKeys();
 
+  this.matter.world.setBounds(0, 0, screen_w, screen_h);
+
+  this.matter.world.on('collisionstart', function (event, a, b) {
+    if ((a == player || b == player) && (a == ball || b == ball)) {
+      if (shooting) {
+        if (ball.body.position.x > player.body.position.x) {
+          ball.body.velocity.multiply(2);
+        }
+      }
+    }
+  });
 }
 
 function update() {
   if (cursors.left.isDown) {
-    player.setVelocityX(-160);
+    player.setVelocityX(-5);
   } else if (cursors.right.isDown) {
-    player.setVelocityX(160);
+    player.setVelocityX(5);
   }
 
-  if (cursors.up.isDown && player.body.position.y >= 602) {
-    player.setVelocityY(-330);
+  if (cursors.up.isDown && player.body.position.y >= 701) {
+    player.setVelocityY(-10);
     player.anims.play('Up', true);
-  } else if (player.body.velocity.y > 0 && player.body.position.y < 602) {
+  } else if (player.body.velocity.y > 0 && player.body.position.y < 701) {
     player.anims.play('Down', true);
-  } else if (player.body.position.y >= 602 && Math.abs(player.body.velocity.x) <= 2) {
+  } else if (player.body.position.y >= 701 && Math.abs(player.body.velocity.x) <= 2) {
     player.anims.play('Idle', true);
-  } else if (player.body.velocity.x < -2 && player.body.position.y >= 602) { // Going left.
+  } else if (player.body.velocity.x < -2 && player.body.position.y >= 701) { // Going left.
     player.anims.play('Left', true);
   } else if (player.body.position.y >= 602 && player.body.velocity.x > 2) {
     player.anims.play('Right', true);
   }
+  if (cursors.space.isDown && !shooting) {
+    player.anims.play('Shoot', true);
+    shooting = true;
+    shooting_t = 0;
+  }
+
+  if (shooting) {
+    shooting_t++;
+    if (shooting_t > 25) {
+      shooting = false;
+    }
+    player.anims.play('Shoot', true);
+  }
+
+  player.setAngle(0);
+  player.body.angularVelocity = 0;
+  player.body.angularSpeed    = 0;
 }
 
 
