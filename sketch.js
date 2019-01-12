@@ -33,9 +33,11 @@ function preload() {
   this.load.image('move_left', 'Sprites/left.png');
   this.load.image('jump_up', 'Sprites/jumping.png');
   this.load.image('jump_down', 'Sprites/falling.png');
-  this.load.image('kick', 'Sprites/shooting.png');
+  // this.load.image('kick', 'Sprites/shooting.png');
+  this.load.image('kick', 'Sprites/shooting-no-foot.png');
   this.load.image('hills', 'Sprites/hills.jpg');
   this.load.image('ball', 'Sprites/ball.png');
+  this.load.image('foot', 'Sprites/foot.png')
   this.load.json('shapes', 'Sprites/shapes.json');
 }
 
@@ -106,12 +108,17 @@ glob = this;
   this.matter.world.setBounds(0, 0, screen_w, screen_h);
 
   this.matter.world.on('collisionstart', function (event) {
-    console.log(event.pairs[0]);
+    // console.log(event.pairs[0]);
     if (event.pairs[0].bodyA.label == "Player1") {
       if (event.pairs[0].bodyB.label == "Ball") {
         // Collision between player 1 and the ball.
+        // console.log(event.pairs[0]);
         if (player.shooting) {
           console.log(event.pairs[0]);
+          if (player.body.body.position.x < ball.body.position.x - ball.width / 2) { // The ball is on the right of the player.
+            console.log("SHOOT");
+
+          }
         }
       }
     }
@@ -140,9 +147,9 @@ function update() {
     player.body.anims.play('Right', true);
   }
   if (cursors.space.isDown && !player.shooting) {
-    player.body.anims.play('Shoot', true);
-    player.shooting = true;
-    player.shooting_t = 0;
+    // player.body.anims.play('Shoot', true);
+    // player.shooting = true;
+    // player.shooting_t = 0;
   }
 
   if (player.shooting) {
